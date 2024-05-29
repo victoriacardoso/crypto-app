@@ -1,11 +1,8 @@
 package com.crypto.cryptoapp.controller;
 
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,33 +24,7 @@ public class CoinController {
 
     @Autowired
     private CoinRepository coinRepository;
-
-    @Bean
-    public CoinModel init() {
-        CoinModel c1 = new CoinModel();
-        c1.setName("Bitcoin");
-        c1.setPrice(new BigDecimal(100));
-        c1.setQuantity(new BigDecimal(0.0005));
-        c1.setDateTime(new Timestamp(System.currentTimeMillis()));
-
-        CoinModel c2 = new CoinModel();
-        c2.setName("Bitcoin");
-        c2.setPrice(new BigDecimal(150));
-        c2.setQuantity(new BigDecimal(0.0025));
-        c2.setDateTime(new Timestamp(System.currentTimeMillis()));
-
-        CoinModel c3 = new CoinModel();
-        c3.setName("Ethereum");
-        c3.setPrice(new BigDecimal(500));
-        c3.setQuantity(new BigDecimal(0.0045));
-        c3.setDateTime(new Timestamp(System.currentTimeMillis()));
-
-        coinRepository.insert(c1);
-        coinRepository.insert(c2);
-        coinRepository.insert(c3);
-        return c1;
-    }
-
+    
     @GetMapping("")
     public ResponseEntity<?> get() {
         return new ResponseEntity<>(coinRepository.getAll(), HttpStatus.OK);
