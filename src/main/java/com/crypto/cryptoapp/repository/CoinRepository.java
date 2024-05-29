@@ -18,12 +18,15 @@ public class CoinRepository {
     private static String INSERT = "insert into coin (name, price, quantity, datetime) values(?,?,?,?)";
     private static String SELECT_ALL = "select name, sum(quantity) as quantity from coin group by name";
     private static String SELECT_BY_NAME = "select * from coin where name = ?";
+    private static String DELETE = "delete from coin where id = ?";
+    private static String UPDATE = "update coin set name = ?, price = ?, quantity = ? where id = ?";
 
     private JdbcTemplate jdbcTemplate;
 
     public CoinRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
+
 
     public CoinModel insert(CoinModel coin) {
         Object[] attr = new Object[] {
@@ -36,11 +39,22 @@ public class CoinRepository {
         return coin;
     }
 
+    public CoinModel update(CoinModel coin) {
+        Object[] attr = new Object[] {
+            coin.getName(),
+            coin.getPrice(),
+            coin.getQuantity(),
+            coin.getId()
+        };
+        jdbcTemplate.update(UPDATE, attr);
+        return coin;
+    }
+
     public List<CoinDTO> getAll() {
         return jdbcTemplate.query(SELECT_ALL, new RowMapper<CoinDTO>() {
 
             @Override
-            public CoinDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
+            public CoinDTO mapRow(@SuppressWarnings("null") ResultSet rs, int rowNum) throws SQLException {
                 CoinDTO coin = new CoinDTO();
                 coin.setName(rs.getString("name"));
                 coin.setQuantity(rs.getBigDecimal("quantity"));
@@ -56,7 +70,7 @@ public class CoinRepository {
         return jdbcTemplate.query(SELECT_BY_NAME, new RowMapper<CoinModel>() {
 
             @Override
-            public CoinModel mapRow(ResultSet rs, int rowNum) throws SQLException {
+            public CoinModel mapRow(@SuppressWarnings("null") ResultSet rs, int rowNum) throws SQLException {
                 CoinModel coinModel = new CoinModel();
                 coinModel.setId(rs.getInt("id"));
                 coinModel.setName(rs.getString("name"));
@@ -67,6 +81,10 @@ public class CoinRepository {
             }
 
         }, attr);
+    }
+
+    public int remove(int id){
+        return jdbcTemplate.update(DELETE, id);
     }
 
 }
