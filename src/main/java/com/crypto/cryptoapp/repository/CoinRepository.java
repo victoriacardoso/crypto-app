@@ -1,90 +1,62 @@
 package com.crypto.cryptoapp.repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.crypto.cryptoapp.dto.CoinDTO;
 import com.crypto.cryptoapp.model.CoinModel;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
+
 @Repository
 @EnableAutoConfiguration
 public class CoinRepository {
-    private static String INSERT = "insert into coin (name, price, quantity, datetime) values(?,?,?,?)";
-    private static String SELECT_ALL = "select name, sum(quantity) as quantity from coin group by name";
-    private static String SELECT_BY_NAME = "select * from coin where name = ?";
-    private static String DELETE = "delete from coin where id = ?";
-    private static String UPDATE = "update coin set name = ?, price = ?, quantity = ? where id = ?";
 
-    private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private EntityManager entityManager;
 
-    public CoinRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
-
+    @Transactional
     public CoinModel insert(CoinModel coin) {
-        Object[] attr = new Object[] {
-                coin.getName(),
-                coin.getPrice(),
-                coin.getQuantity(),
-                coin.getDateTime()
-        };
-        jdbcTemplate.update(INSERT, attr);
+        entityManager.persist(coin);
         return coin;
     }
 
+    @Transactional
     public CoinModel update(CoinModel coin) {
-        Object[] attr = new Object[] {
-            coin.getName(),
-            coin.getPrice(),
-            coin.getQuantity(),
-            coin.getId()
-        };
-        jdbcTemplate.update(UPDATE, attr);
+        entityManager.merge(coin);
         return coin;
     }
 
     public List<CoinDTO> getAll() {
-        return jdbcTemplate.query(SELECT_ALL, new RowMapper<CoinDTO>() {
-
-            @Override
-            public CoinDTO mapRow(@SuppressWarnings("null") ResultSet rs, int rowNum) throws SQLException {
-                CoinDTO coin = new CoinDTO();
-                coin.setName(rs.getString("name"));
-                coin.setQuantity(rs.getBigDecimal("quantity"));
-
-                return coin;
-            }
-
-        });
+        String jpql = "select new CoinDTO(c.name, sum (c.quantity)) from CoinModel c group by c.name";
+        TypedQuery<CoinDTO> query = entityManager.createQuery(jpql, CoinDTO.class);
+        return query.getResultList();
     }
 
     public List<CoinModel> getByName(String name) {
-        Object[] attr = new Object[] {name};
-        return jdbcTemplate.query(SELECT_BY_NAME, new RowMapper<CoinModel>() {
+        String jpql = "select c from CoinModel c where c.name like :name";
+        TypedQuery<CoinModel> query = entityManager.createQuery(jpql, CoinModel.class);
+        query.setParameter("name", "%" + name + "%");
 
-            @Override
-            public CoinModel mapRow(@SuppressWarnings("null") ResultSet rs, int rowNum) throws SQLException {
-                CoinModel coinModel = new CoinModel();
-                coinModel.setId(rs.getInt("id"));
-                coinModel.setName(rs.getString("name"));
-                coinModel.setPrice(rs.getBigDecimal("price"));
-                coinModel.setQuantity(rs.getBigDecimal("quantity"));
-                coinModel.setDateTime(rs.getTimestamp("datetime"));
-                return coinModel;
-            }
-
-        }, attr);
+        return query.getResultList();
     }
+    @Transactional
+    public boolean remove(int id) {
+        CoinModel coin = entityManager.find(CoinModel.class, id);
 
-    public int remove(int id){
-        return jdbcTemplate.update(DELETE, id);
+        if (coin == null) {
+            throw new RuntimeException();
+        }
+
+        entityManager.remove(coin);
+        return true;
+
     }
 
 }
